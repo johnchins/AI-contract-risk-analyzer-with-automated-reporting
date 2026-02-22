@@ -1,0 +1,409 @@
+{
+  "name": "AI Contract Risk Analyzer with Automated Reporting",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Contract Risk Analysis Upload",
+        "formDescription": "Upload your contract document for AI-powered risk analysis",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Contract Document",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .doc, .docx",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Analyze Contract",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Your contract is being analyzed. You will receive a detailed risk report via email shortly."
+            }
+          }
+        }
+      },
+      "id": "32314f74-aa9d-4158-80f6-4a3dfb926e51",
+      "name": "File Upload Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -1120,
+        112
+      ],
+      "webhookId": "41e20c10-d00b-4517-aecf-bda3ee384bb5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "recipient_email",
+              "value": "={{ $json.submittedAt.email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "contract_filename",
+              "value": "={{ $json.info.Title }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "analysis_date",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "704820ff-8b2f-4ba3-9607-f96f16b99a70",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -768,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Contract_Document",
+        "options": {}
+      },
+      "id": "62863628-6a64-402d-ade9-855ce3833786",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following contract:\n\nContract Filename: {{ $json.contract_filename }}\nAnalysis Date: {{ $json.analysis_date }}\n\nContract Text:\n{{ $json.text }}\n\nProvide a comprehensive analysis including:\n1. Contract filename and analysis date (from the information provided above)\n2. Overall risk assessment and numeric score (0-100)\n3. Specific risky clauses with exact text and detailed explanation\n4. Legal concerns and potential liabilities\n5. Compliance issues\n6. Actionable recommendations for mitigation",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert contract attorney specializing in risk analysis. Your role is to analyze contract documents and identify risky clauses, legal issues, and compliance concerns. Be thorough, specific, and provide actionable recommendations. Assess risk levels as Low, Medium, High, or Critical based on potential legal and financial impact."
+        }
+      },
+      "id": "6175ec34-32c3-4e79-864c-c4967e29d0d3",
+      "name": "AI Clause Analysis",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -592,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "8ab479b4-8744-4c62-8883-db65f18c5e70",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -688,
+        208
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "75zqDy8FRvvrCofG",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"contract_filename\":{\"type\":\"string\",\"description\":\"Name of the contract file being analyzed\"},\"analysis_date\":{\"type\":\"string\",\"description\":\"Date and time when the analysis was performed\"},\"risk_level\":{\"type\":\"string\",\"enum\":[\"Low\",\"Medium\",\"High\",\"Critical\"]},\"risk_score\":{\"type\":\"number\",\"description\":\"Numeric risk score from 0-100\"},\"risky_clauses\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"clause_text\":{\"type\":\"string\"},\"risk_type\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"explanation\":{\"type\":\"string\"}}}},\"legal_concerns\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"compliance_issues\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"recommendations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"summary\":{\"type\":\"string\"}},\"required\":[\"contract_filename\",\"analysis_date\",\"risk_level\",\"risk_score\",\"risky_clauses\",\"recommendations\",\"summary\"]}"
+      },
+      "id": "a5b1b422-8092-49f5-8b0a-fbfbbc2b45b1",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "risk_level",
+              "value": "={{ $json.output.risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "risk_score",
+              "value": "={{ $json.output.risk_score }}",
+              "type": "number"
+            },
+            {
+              "id": "id-3",
+              "name": "risky_clauses",
+              "value": "={{ JSON.stringify($json.output.risky_clauses) }}",
+              "type": "array"
+            },
+            {
+              "id": "id-4",
+              "name": "legal_concerns",
+              "value": "={{ JSON.stringify($json.output.legal_concerns || []) }}",
+              "type": "array"
+            },
+            {
+              "id": "id-5",
+              "name": "compliance_issues",
+              "value": "={{ JSON.stringify($json.output.compliance_issues || []) }}",
+              "type": "array"
+            },
+            {
+              "id": "id-6",
+              "name": "recommendations",
+              "value": "={{ $json.output.recommendations }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "summary",
+              "value": "={{ $json.output.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "total_risky_clauses",
+              "value": "={{ $json.output.risky_clauses.length }}",
+              "type": "number"
+            },
+            {
+              "id": "id-9",
+              "name": "contract_filename",
+              "value": "={{ $json.output.contract_filename }}",
+              "type": "string"
+            },
+            {
+              "id": "id-10",
+              "name": "analysis_date",
+              "value": "={{ $json.output.analysis_date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "59243f7d-618d-4d0c-afdc-2f927b1b374c",
+      "name": "Risk Scoring",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=john.uneke.c@gmail.com",
+        "subject": "=Contract Risk Analysis Report - {{ $('Workflow Configuration').item.json.contract_filename }}",
+        "emailType": "text",
+        "message": "=Your contract risk analysis is complete\n\nDocument: {{ $('Workflow Configuration').item.json.contract_filename }}\n\nRisk Level: {{ $('Risk Scoring').item.json.risk_level }}\n\nRisk Score: {{ $('Risk Scoring').item.json.risk_score }}\n\nRisky Clauses Found: {{ $('Risk Scoring').item.json.total_risky_clauses }}\n\nPlease review the attached PDF report for detailed analysis, identified risks, and recommendations",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "document.pdf"
+              }
+            ]
+          }
+        }
+      },
+      "id": "70571523-9327-4d28-b1f9-cd0e32c0d181",
+      "name": "Gmail Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        96
+      ],
+      "webhookId": "8928069b-7049-4a35-8066-a31c20d76ed3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "h0HX20A5gngbA05m",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>Contract Risk Analysis Report</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Contract Risk Analysis Report</h1>\n      <p class=\"subtitle\">Comprehensive AI-Powered Risk Assessment</p>\n    </div>\n    \n    <div class=\"section\">\n      <h2>Document Information</h2>\n      <table class=\"info-table\">\n        <tr>\n          <td class=\"label\">Contract Filename:</td>\n          <td>{{ $('Workflow Configuration').item.json.contract_filename }}</td>\n        </tr>\n        <tr>\n          <td class=\"label\">Analysis Date:</td>\n          <td>{{ $('Risk Scoring').item.json.analysis_date }}</td>\n        </tr>\n      </table>\n    </div>\n\n    <div class=\"section risk-summary\">\n      <h2>Risk Summary</h2>\n      <div class=\"risk-box\">\n        <div class=\"risk-level {{ $('Risk Scoring').item.json.risk_level.toLowerCase() }}\">\n          <span class=\"risk-label\">Risk Level:</span>\n          <span class=\"risk-value\">{{ $('Risk Scoring').item.json.risk_level }}</span>\n        </div>\n        <div class=\"risk-score\">\n          <span class=\"score-label\">Risk Score:</span>\n          <span class=\"score-value\">{{ $('Risk Scoring').item.json.risk_score }}/100</span>\n        </div>\n        <div class=\"clause-count\">\n          <span class=\"count-label\">Risky Clauses Found:</span>\n          <span class=\"count-value\">{{ $('Risk Scoring').item.json.total_risky_clauses }}</span>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"section\">\n      <h2>Executive Summary</h2>\n      <p class=\"summary-text\">{{ $('Risk Scoring').item.json.summary }}</p>\n    </div>\n\n    <div class=\"section\">\n      <h2>Risky Clauses Identified</h2>\n      {{ $('Risk Scoring').item.json.risky_clauses.map((clause, index) => `\n        <div class=\"clause-item\">\n          <h3>Clause ${index + 1}: ${clause.risk_type}</h3>\n          <div class=\"severity ${clause.severity.toLowerCase()}\">Severity: ${clause.severity}</div>\n          <div class=\"clause-text\">\n            <strong>Clause Text:</strong>\n            <p>${clause.clause_text}</p>\n          </div>\n          <div class=\"explanation\">\n            <strong>Explanation:</strong>\n            <p>${clause.explanation}</p>\n          </div>\n        </div>\n      `).join('') }}\n    </div>\n\n    <div class=\"section\">\n      <h2>Legal Concerns</h2>\n      <ul class=\"concerns-list\">\n        {{ $('Risk Scoring').item.json.legal_concerns.map(concern => `<li>${concern}</li>`).join('') }}\n      </ul>\n    </div>\n\n    <div class=\"section\">\n      <h2>Compliance Issues</h2>\n      <ul class=\"concerns-list\">\n        {{ $('Risk Scoring').item.json.compliance_issues.map(issue => `<li>${issue}</li>`).join('') }}\n      </ul>\n    </div>\n\n    <div class=\"section\">\n      <h2>Recommendations</h2>\n      <div class=\"recommendations\">\n        <p>{{ $('Risk Scoring').item.json.recommendations }}</p>\n      </div>\n    </div>\n\n    <div class=\"footer\">\n      <p>This report was generated automatically using AI-powered contract analysis.</p>\n      <p>Please consult with legal counsel for specific advice regarding your contract.</p>\n    </div>\n  </div>\n</body>\n</html>\n\n<style>\n* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}\n\nbody {\n  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n  background-color: #f5f5f5;\n  padding: 20px;\n  line-height: 1.6;\n}\n\n.container {\n  max-width: 900px;\n  margin: 0 auto;\n  background-color: #ffffff;\n  padding: 40px;\n  border-radius: 8px;\n  box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n}\n\n.header {\n  text-align: center;\n  margin-bottom: 40px;\n  padding-bottom: 20px;\n  border-bottom: 3px solid #ff6d5a;\n}\n\n.header h1 {\n  color: #2c3e50;\n  font-size: 32px;\n  font-weight: bold;\n  margin-bottom: 10px;\n}\n\n.subtitle {\n  color: #7f8c8d;\n  font-size: 16px;\n}\n\n.section {\n  margin-bottom: 30px;\n}\n\n.section h2 {\n  color: #2c3e50;\n  font-size: 24px;\n  font-weight: bold;\n  margin-bottom: 15px;\n  padding-bottom: 10px;\n  border-bottom: 2px solid #ecf0f1;\n}\n\n.info-table {\n  width: 100%;\n  border-collapse: collapse;\n}\n\n.info-table tr {\n  border-bottom: 1px solid #ecf0f1;\n}\n\n.info-table td {\n  padding: 12px;\n  font-size: 14px;\n}\n\n.info-table .label {\n  font-weight: bold;\n  color: #34495e;\n  width: 200px;\n}\n\n.risk-summary {\n  background-color: #f8f9fa;\n  padding: 20px;\n  border-radius: 8px;\n}\n\n.risk-box {\n  display: flex;\n  justify-content: space-around;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 20px;\n}\n\n.risk-level, .risk-score, .clause-count {\n  text-align: center;\n  padding: 15px 25px;\n  border-radius: 8px;\n  background-color: #ffffff;\n  box-shadow: 0 2px 5px rgba(0,0,0,0.1);\n}\n\n.risk-label, .score-label, .count-label {\n  display: block;\n  font-size: 14px;\n  color: #7f8c8d;\n  margin-bottom: 8px;\n}\n\n.risk-value, .score-value, .count-value {\n  display: block;\n  font-size: 24px;\n  font-weight: bold;\n}\n\n.risk-level.low .risk-value {\n  color: #27ae60;\n}\n\n.risk-level.medium .risk-value {\n  color: #f39c12;\n}\n\n.risk-level.high .risk-value {\n  color: #e67e22;\n}\n\n.risk-level.critical .risk-value {\n  color: #e74c3c;\n}\n\n.summary-text {\n  font-size: 15px;\n  color: #34495e;\n  line-height: 1.8;\n  text-align: justify;\n}\n\n.clause-item {\n  background-color: #f8f9fa;\n  padding: 20px;\n  margin-bottom: 20px;\n  border-radius: 8px;\n  border-left: 4px solid #ff6d5a;\n}\n\n.clause-item h3 {\n  color: #2c3e50;\n  font-size: 18px;\n  margin-bottom: 10px;\n}\n\n.severity {\n  display: inline-block;\n  padding: 5px 15px;\n  border-radius: 20px;\n  font-size: 12px;\n  font-weight: bold;\n  margin-bottom: 15px;\n  text-transform: uppercase;\n}\n\n.severity.low {\n  background-color: #d4edda;\n  color: #155724;\n}\n\n.severity.medium {\n  background-color: #fff3cd;\n  color: #856404;\n}\n\n.severity.high {\n  background-color: #f8d7da;\n  color: #721c24;\n}\n\n.severity.critical {\n  background-color: #f5c6cb;\n  color: #721c24;\n}\n\n.clause-text, .explanation {\n  margin-bottom: 15px;\n}\n\n.clause-text p, .explanation p {\n  margin-top: 8px;\n  padding: 10px;\n  background-color: #ffffff;\n  border-radius: 4px;\n  font-size: 14px;\n  color: #34495e;\n}\n\n.concerns-list {\n  list-style-position: inside;\n  padding-left: 20px;\n}\n\n.concerns-list li {\n  margin-bottom: 10px;\n  font-size: 14px;\n  color: #34495e;\n  line-height: 1.6;\n}\n\n.recommendations {\n  background-color: #e8f5e9;\n  padding: 20px;\n  border-radius: 8px;\n  border-left: 4px solid #4caf50;\n}\n\n.recommendations p {\n  font-size: 14px;\n  color: #2e7d32;\n  line-height: 1.8;\n}\n\n.footer {\n  margin-top: 40px;\n  padding-top: 20px;\n  border-top: 2px solid #ecf0f1;\n  text-align: center;\n  color: #95a5a6;\n  font-size: 12px;\n}\n\n.footer p {\n  margin-bottom: 5px;\n}\n</style>"
+      },
+      "id": "d0c5fdb9-aba7-4a44-aad1-5adfdcde68d1",
+      "name": "Generate HTML Report",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "conversion",
+        "htmlContent": "={{ $json.html }}",
+        "conversionOptions": {
+          "conversionOutput": "file"
+        }
+      },
+      "type": "@pdfgeneratorapi/n8n-nodes-pdf-generator-api.pdfGeneratorApi",
+      "typeVersion": 1,
+      "position": [
+        128,
+        16
+      ],
+      "id": "aa245761-7212-4a3b-8a14-38be30d1a663",
+      "name": "Convert HTML content to PDF",
+      "credentials": {
+        "pdfGeneratorApi": {
+          "id": "1GCSnSn4gSNt5PYL",
+          "name": "PDF Generator account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "File Upload Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "AI Clause Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Clause Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Clause Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Clause Analysis": {
+      "main": [
+        [
+          {
+            "node": "Risk Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Scoring": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML content to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML content to PDF": {
+      "main": [
+        [
+          {
+            "node": "Gmail Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "55a1c6ae-9e20-4504-8f01-30287f507282",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d7e319bd65bc6e0d8d58df46cd125afec1c1e91bb5bd83c47fb82026129ab6f6"
+  },
+  "id": "G4FtBiFmqUwu6UMJ",
+  "tags": []
+}
