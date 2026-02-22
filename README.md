@@ -1,4 +1,4 @@
-# ai-contract-risk-analyzer-with-automated-reporting
+# AI-contract-risk-analyzer-with-automated-reporting
 
 ## 🚀 Project Overview
 
