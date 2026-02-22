@@ -1,6 +1,6 @@
 # ai-contract-risk-analyzer-with-automated-reporting
 
-# 🚀 Project Overview
+## 🚀 Project Overview
 
 An end-to-end AI automation workflow that analyzes uploaded contracts, detects risky clauses, assigns a numeric risk score (0–100), generates a structured legal assessment, converts the results into a professional PDF report, and automatically emails the report to the user — built entirely in n8n using OpenAI and automated document generation.
 
@@ -185,8 +185,3 @@ This project showcases advanced:
 
 ---
 
-# 👤 Featured Project Description (For GitHub Profile)
-
-Built an AI-powered contract risk analysis system using n8n and OpenAI that automatically evaluates legal documents, assigns risk scores, generates structured reports, converts them into professional PDFs, and delivers them via email — demonstrating enterprise AI automation and legal tech workflow engineering.
-
----
